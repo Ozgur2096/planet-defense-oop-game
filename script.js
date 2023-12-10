@@ -14,12 +14,31 @@ class Planet {
   }
 }
 
+class Player {
+  constructor(game) {
+    this.game = game;
+    this.x = this.game.width / 2;
+    this.y = this.game.height / 2;
+    this.radius = 40;
+    this.image = document.getElementById('spaceship');
+  }
+  draw(context) {
+    context.drawImage(this.image, this.x - this.radius, this.y - this.radius);
+    context.beginPath();
+    context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    context.stroke();
+  }
+  update() {
+    this.x++;
+  }
+}
 class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.width = this.canvas.width;
     this.height = this.canvas.height;
     this.planet = new Planet(this);
+    this.player = new Player(this);
 
     this.mouse = {
       x: 0,
@@ -33,6 +52,7 @@ class Game {
   }
   render(context) {
     this.planet.draw(context);
+    this.player.draw(context);
     context.beginPath();
     context.moveTo(this.planet.x, this.planet.y);
     context.lineTo(this.mouse.x, this.mouse.y);
