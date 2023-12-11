@@ -22,12 +22,17 @@ class Player {
     this.radius = 40;
     this.image = document.getElementById('spaceship');
     this.aim;
+    this.angle = 0;
   }
   draw(context) {
-    context.drawImage(this.image, this.x - this.radius, this.y - this.radius);
+    context.save();
+    context.translate(this.x, this.y);
+    context.rotate(this.angle - Math.PI);
+    context.drawImage(this.image, 0 - this.radius, 0 - this.radius);
     context.beginPath();
-    context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    context.arc(0, 0, this.radius, 0, Math.PI * 2);
     context.stroke();
+    context.restore();
   }
   update() {
     this.aim = this.game.calcAim(this.game.mouse, this.game.planet);
@@ -37,6 +42,7 @@ class Player {
     this.y =
       this.game.planet.y +
       (this.game.planet.radius + this.radius) * this.aim[1];
+    this.angle = Math.atan2(this.aim[3], this.aim[2]);
   }
 }
 class Game {
@@ -62,9 +68,6 @@ class Game {
     this.player.draw(context);
     this.player.update();
     context.beginPath();
-    context.moveTo(this.planet.x, this.planet.y);
-    context.lineTo(this.mouse.x, this.mouse.y);
-    context.stroke();
   }
   calcAim(a, b) {
     const dx = a.x - b.x;
