@@ -21,6 +21,7 @@ class Player {
     this.y = this.game.height / 2;
     this.radius = 40;
     this.image = document.getElementById('spaceship');
+    this.aim;
   }
   draw(context) {
     context.drawImage(this.image, this.x - this.radius, this.y - this.radius);
@@ -29,7 +30,13 @@ class Player {
     context.stroke();
   }
   update() {
-    this.x++;
+    this.aim = this.game.calcAim(this.game.mouse, this.game.planet);
+    this.x =
+      this.game.planet.x +
+      (this.game.planet.radius + this.radius) * this.aim[0];
+    this.y =
+      this.game.planet.y +
+      (this.game.planet.radius + this.radius) * this.aim[1];
   }
 }
 class Game {
@@ -53,10 +60,19 @@ class Game {
   render(context) {
     this.planet.draw(context);
     this.player.draw(context);
+    this.player.update();
     context.beginPath();
     context.moveTo(this.planet.x, this.planet.y);
     context.lineTo(this.mouse.x, this.mouse.y);
     context.stroke();
+  }
+  calcAim(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    const distance = Math.hypot(dx, dy);
+    const aimX = dx / distance;
+    const aimY = dy / distance;
+    return [aimX, aimY, dx, dy];
   }
 }
 
