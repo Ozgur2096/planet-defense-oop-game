@@ -48,6 +48,45 @@ class Player {
       (this.game.planet.radius + this.radius) * this.aim[1];
     this.angle = Math.atan2(this.aim[3], this.aim[2]);
   }
+  shoot() {
+    const projectile = this.game.getProjectile();
+    if (projectile) projectile.start(this.x, this.y);
+  }
+}
+
+class Projectile {
+  constructor(game) {
+    this.game = game;
+    this.x;
+    this.y;
+    this.radius = 20;
+    this.speedX = 1;
+    this.speedY = 1;
+    this.free = true;
+  }
+  start(x, y) {
+    this.free = false;
+    this.x = x;
+    this.y = y;
+  }
+  reset() {
+    this.free = true;
+  }
+  draw(context) {
+    if (!this.free) {
+      context.save();
+      context.beginPath();
+      context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      context.stroke();
+      context.restore();
+    }
+  }
+  update() {
+    if (!this.free) {
+      this.x += this.speedX;
+      this.y += this.speedY;
+    }
+  }
 }
 class Game {
   constructor(canvas) {
@@ -58,6 +97,12 @@ class Game {
     this.player = new Player(this);
     this.debug = true;
 
+    this.projectilePool = [];
+    this.numberOfProjectiles = 5;
+    this.createProjectilePool();
+
+    console.log(this.projectilePool);
+
     this.mouse = {
       x: 0,
       y: 0,
@@ -67,6 +112,11 @@ class Game {
       this.mouse.x = e.offsetX;
       this.mouse.y = e.offsetY;
     });
+    window.addEventListener('mousedown', e => {
+      this.mouse.x = e.offsetX;
+      this.mouse.y = e.offsetY;
+      this.player.shoot();
+    });
     window.addEventListener('keyup', e => {
       if (e.key === 'd') this.debug = !this.debug;
     });
@@ -75,7 +125,10 @@ class Game {
     this.planet.draw(context);
     this.player.draw(context);
     this.player.update();
-    context.beginPath();
+    this.projectilePool.forEach(projectile => {
+      projectile.draw(context);
+      projectile.update();
+    });
   }
   calcAim(a, b) {
     const dx = a.x - b.x;
@@ -84,6 +137,16 @@ class Game {
     const aimX = dx / distance;
     const aimY = dy / distance;
     return [aimX, aimY, dx, dy];
+  }
+  createProjectilePool() {
+    for (let i = 0; i < this.numberOfProjectiles; i++) {
+      this.projectilePool.push(new Projectile(this));
+    }
+  }
+  getProjectile() {
+    for (let i = 0; i < this.projectilePool.length; i++) {
+      if (this.projectilePool[i].free) return this.projectilePool[i];
+    }
   }
 }
 
