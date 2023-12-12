@@ -50,7 +50,13 @@ class Player {
   }
   shoot() {
     const projectile = this.game.getProjectile();
-    if (projectile) projectile.start(this.x, this.y);
+    if (projectile)
+      projectile.start(
+        this.x + this.radius * this.aim[0],
+        this.y + this.radius * this.aim[1],
+        this.aim[0],
+        this.aim[1]
+      );
   }
 }
 
@@ -59,15 +65,18 @@ class Projectile {
     this.game = game;
     this.x;
     this.y;
-    this.radius = 20;
+    this.radius = 5;
     this.speedX = 1;
     this.speedY = 1;
+    this.speedModifier = 5;
     this.free = true;
   }
-  start(x, y) {
+  start(x, y, speedX, speedY) {
     this.free = false;
     this.x = x;
     this.y = y;
+    this.speedX = speedX * this.speedModifier;
+    this.speedY = speedY * this.speedModifier;
   }
   reset() {
     this.free = true;
@@ -77,7 +86,8 @@ class Projectile {
       context.save();
       context.beginPath();
       context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      context.stroke();
+      context.fillStyle = 'gold';
+      context.fill();
       context.restore();
     }
   }
@@ -86,19 +96,28 @@ class Projectile {
       this.x += this.speedX;
       this.y += this.speedY;
     }
+    // reset if outside the visible game area
+    if (
+      this.x < 0 ||
+      this.x > this.game.width ||
+      this.y < 0 ||
+      this.y > this.game.height
+    ) {
+      this.reset();
+    }
   }
 }
 class Game {
   constructor(canvas) {
     this.canvas = canvas;
-    this.width = this.canvas.width;
     this.height = this.canvas.height;
+    this.width = this.canvas.width;
     this.planet = new Planet(this);
     this.player = new Player(this);
     this.debug = true;
 
     this.projectilePool = [];
-    this.numberOfProjectiles = 5;
+    this.numberOfProjectiles = 20;
     this.createProjectilePool();
 
     console.log(this.projectilePool);
@@ -119,6 +138,7 @@ class Game {
     });
     window.addEventListener('keyup', e => {
       if (e.key === 'd') this.debug = !this.debug;
+      else if (e.key === 'a') this.player.shoot();
     });
   }
   render(context) {
@@ -153,8 +173,8 @@ class Game {
 window.addEventListener('load', function () {
   const canvas = document.getElementById('canvas1');
   const ctx = canvas.getContext('2d');
-  canvas.width = 500;
-  canvas.height = 500;
+  canvas.height = window.screen.height;
+  canvas.width = window.screen.width;
   ctx.strokeStyle = 'white';
   ctx.lineWidth = 2;
 
