@@ -142,6 +142,14 @@ class Enemy {
     if (!this.free) {
       this.x += this.speedX;
       this.y += this.speedY;
+      // check collision enemy / planet
+      if (this.game.checkCollision(this, this.game.planet)) {
+        this.reset();
+      }
+      // check collision enemy / player
+      if (this.game.checkCollision(this, this.game.player)) {
+        this.reset();
+      }
     }
   }
 }
@@ -161,8 +169,6 @@ class Game {
     this.enemyPool = [];
     this.numberOfEnemies = 20;
     this.createEnemyPool();
-
-    console.log(this.projectilePool);
 
     this.mouse = {
       x: 0,
@@ -203,6 +209,13 @@ class Game {
     const aimX = dx / distance;
     const aimY = dy / distance;
     return [aimX, aimY, dx, dy];
+  }
+  checkCollision(a, b) {
+    const dx = a.x - -b.x;
+    const dy = a.y - -b.y;
+    const distance = Math.hypot(dx, dy);
+    const sumOfRadii = a.radius + b.radius;
+    return distance < sumOfRadii;
   }
   createProjectilePool() {
     for (let i = 0; i < this.numberOfProjectiles; i++) {
