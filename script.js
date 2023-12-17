@@ -122,8 +122,15 @@ class Enemy {
   }
   start() {
     this.free = false;
-    this.x = Math.random() * this.game.width;
-    this.y = Math.random() * this.game.height;
+    if (Math.random() < 0.5) {
+      this.x = Math.random() * this.game.width;
+      this.y =
+        Math.random() < 0.5 ? -this.radius : this.game.height + this.radius;
+    } else {
+      this.x =
+        Math.random() < 0.5 ? -this.radius : this.game.width + this.radius;
+      this.y = Math.random() * this.game.height;
+    }
     const aim = this.game.calcAim(this, this.game.planet);
     this.speedX = aim[0];
     this.speedY = aim[1];
@@ -140,8 +147,8 @@ class Enemy {
   }
   update() {
     if (!this.free) {
-      this.x += this.speedX;
-      this.y += this.speedY;
+      this.x -= this.speedX;
+      this.y -= this.speedY;
       // check collision enemy / planet
       if (this.game.checkCollision(this, this.game.planet)) {
         this.reset();
@@ -150,6 +157,13 @@ class Enemy {
       if (this.game.checkCollision(this, this.game.player)) {
         this.reset();
       }
+      // check collision enemy / projectile
+      this.game.projectilePool.forEach(projectile => {
+        if (!projectile.free && this.game.checkCollision(this, projectile)) {
+          projectile.reset();
+          this.reset();
+        }
+      });
     }
   }
 }
@@ -170,6 +184,10 @@ class Game {
     this.numberOfEnemies = 20;
     this.createEnemyPool();
 
+    this.enemyPool[0].start();
+    this.enemyTimer = 0;
+    this.enemyInterval = 1000;
+
     this.mouse = {
       x: 0,
       y: 0,
@@ -189,7 +207,7 @@ class Game {
       else if (e.key === 'a') this.player.shoot();
     });
   }
-  render(context) {
+  render(context, deltaTime) {
     this.planet.draw(context);
     this.player.draw(context);
     this.player.update();
@@ -201,6 +219,14 @@ class Game {
       enemy.draw(context);
       enemy.update();
     });
+    //periodically activate an enemy
+    if (this.enemyTimer < this.enemyInterval) {
+      this.enemyTimer += deltaTime;
+    } else {
+      this.enemyTimer = 0;
+      const enemy = this.getEnemy();
+      if (enemy) enemy.start();
+    }
   }
   calcAim(a, b) {
     const dx = a.x - b.x;
@@ -211,8 +237,8 @@ class Game {
     return [aimX, aimY, dx, dy];
   }
   checkCollision(a, b) {
-    const dx = a.x - -b.x;
-    const dy = a.y - -b.y;
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
     const distance = Math.hypot(dx, dy);
     const sumOfRadii = a.radius + b.radius;
     return distance < sumOfRadii;
@@ -250,9 +276,12 @@ window.addEventListener('load', function () {
   const game = new Game(canvas);
   game.render(ctx);
 
-  function animate() {
+  let lastTime = 0;
+  function animate(timeStamp) {
+    const deltaTime = timeStamp - lastTime;
+    lastTime = timeStamp;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    game.render(ctx);
+    game.render(ctx, deltaTime);
     window.requestAnimationFrame(animate);
   }
   this.window.requestAnimationFrame(animate);
