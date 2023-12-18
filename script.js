@@ -122,6 +122,9 @@ class Enemy {
   }
   start() {
     this.free = false;
+    this.frameX = 0;
+    this.lives = this.maxLives;
+    this.frameY = Math.floor(Math.random() * 4);
     if (Math.random() < 0.5) {
       this.x = Math.random() * this.game.width;
       this.y =
@@ -138,12 +141,15 @@ class Enemy {
   reset() {
     this.free = true;
   }
+  hit(damage) {
+    this.lives -= damage;
+  }
   draw(context) {
     if (!this.free) {
       context.drawImage(
         this.image,
-        0,
-        0,
+        this.frameX * this.width,
+        this.frameY * this.height,
         this.width,
         this.height,
         this.x - this.radius,
@@ -172,11 +178,18 @@ class Enemy {
       }
       // check collision enemy / projectile
       this.game.projectilePool.forEach(projectile => {
-        if (!projectile.free && this.game.checkCollision(this, projectile)) {
+        if (
+          !projectile.free &&
+          this.game.checkCollision(this, projectile) &&
+          this.lives >= 1
+        ) {
           projectile.reset();
-          this.reset();
+          this.hit(1);
         }
       });
+      // sprite animation
+      if (this.lives < 1 && this.game.spriteUpdate) this.frameX++;
+      if (this.frameX > this.maxFrame) this.reset();
     }
   }
 }
@@ -185,6 +198,11 @@ class Asteroid extends Enemy {
   constructor(game) {
     super(game);
     this.image = document.getElementById('asteroid');
+    this.frameX = 0;
+    this.frameY = Math.floor(Math.random() * 4);
+    this.maxFrame = 7;
+    this.lives = 5;
+    this.maxLives = this.lives;
   }
 }
 
@@ -207,7 +225,11 @@ class Game {
 
     this.enemyPool[0].start();
     this.enemyTimer = 0;
-    this.enemyInterval = 1000;
+    this.enemyInterval = 1700;
+
+    this.spriteUpdate = false;
+    this.spriteTimer = 0;
+    this.spriteInterval = 150;
 
     this.mouse = {
       x: 0,
@@ -247,6 +269,14 @@ class Game {
       this.enemyTimer = 0;
       const enemy = this.getEnemy();
       if (enemy) enemy.start();
+    }
+    // periodically update sprites
+    if (this.spriteTimer < this.spriteInterval) {
+      this.spriteTimer += deltaTime;
+      this.spriteUpdate = false;
+    } else {
+      this.spriteTimer = 0;
+      this.spriteUpdate = true;
     }
   }
   calcAim(a, b) {
