@@ -143,9 +143,12 @@ class Enemy {
   }
   hit(damage) {
     this.lives -= damage;
+    if (this.lives >= 1) this.frameX++;
+    // this.frameX = this.maxLives - this.lives;
   }
   draw(context) {
     if (!this.free) {
+      context.save();
       context.drawImage(
         this.image,
         this.frameX * this.width,
@@ -161,7 +164,9 @@ class Enemy {
         context.beginPath();
         context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         context.stroke();
+        context.fillText(this.lives, this.x, this.y);
       }
+      context.restore();
     }
   }
   update() {
@@ -170,11 +175,15 @@ class Enemy {
       this.y -= this.speedY;
       // check collision enemy / planet
       if (this.game.checkCollision(this, this.game.planet)) {
-        this.reset();
+        this.lives = 0;
+        this.speedX = 0;
+        this.speedY = 0;
+        // this.reset();
       }
       // check collision enemy / player
       if (this.game.checkCollision(this, this.game.player)) {
-        this.reset();
+        this.lives = 0;
+        // this.reset();
       }
       // check collision enemy / projectile
       this.game.projectilePool.forEach(projectile => {
@@ -202,6 +211,18 @@ class Asteroid extends Enemy {
     this.frameY = Math.floor(Math.random() * 4);
     this.maxFrame = 7;
     this.lives = 5;
+    this.maxLives = this.lives;
+  }
+}
+
+class LobsterMorph extends Enemy {
+  constructor(game) {
+    super(game);
+    this.image = document.getElementById('lobster-morph');
+    this.frameX = 0;
+    this.frameY = Math.floor(Math.random() * 4);
+    this.maxFrame = 14;
+    this.lives = 8;
     this.maxLives = this.lives;
   }
 }
@@ -307,6 +328,7 @@ class Game {
   createEnemyPool() {
     for (let i = 0; i < this.numberOfEnemies; i++) {
       this.enemyPool.push(new Asteroid(this));
+      this.enemyPool.push(new LobsterMorph(this));
     }
   }
   getEnemy() {
