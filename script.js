@@ -176,17 +176,19 @@ class Enemy {
       this.x -= this.speedX;
       this.y -= this.speedY;
       // check collision enemy / planet
-      if (this.game.checkCollision(this, this.game.planet)) {
+      if (this.game.checkCollision(this, this.game.planet) && this.lives >= 1) {
         this.lives = 0;
         this.speedX = 0;
         this.speedY = 0;
         this.collided = true;
+        this.game.playerLives--;
         // this.reset();
       }
       // check collision enemy / player
-      if (this.game.checkCollision(this, this.game.player)) {
+      if (this.game.checkCollision(this, this.game.player) && this.lives >= 1) {
         this.lives = 0;
         this.collided = true;
+        this.game.playerLives--;
         // this.reset();
       }
       // check collision enemy / projectile
@@ -219,7 +221,7 @@ class Asteroid extends Enemy {
     this.frameX = 0;
     this.frameY = Math.floor(Math.random() * 4);
     this.maxFrame = 7;
-    this.lives = 5;
+    this.lives = 1;
     this.maxLives = this.lives;
   }
 }
@@ -243,7 +245,7 @@ class Game {
     this.width = this.canvas.width;
     this.planet = new Planet(this);
     this.player = new Player(this);
-    this.debug = true;
+    this.debug = false;
 
     this.projectilePool = [];
     this.numberOfProjectiles = 20;
@@ -263,6 +265,7 @@ class Game {
 
     this.score = 0;
     this.winningScore = 50;
+    this.playerLives = 5;
 
     this.mouse = {
       x: 0,
@@ -315,7 +318,7 @@ class Game {
       this.spriteUpdate = true;
     }
     // win / lose condition
-    if (this.score >= this.winningScore) {
+    if (this.score >= this.winningScore || this.playerLives < 1) {
       this.gameOver = true;
     }
   }
@@ -323,12 +326,20 @@ class Game {
     context.font = '30px sans-serif';
     context.fillStyle = 'white';
     context.fillText('Score ' + this.score, 200, 200);
+
+    for (let i = 0; i < this.playerLives; i++) {
+      context.fillRect(220 + 15 * i, 260, 10, 30);
+    }
+
     if (this.gameOver) {
       context.textAlign = 'center';
       let message1;
       let message2;
       if (this.score >= this.winningScore) {
         message1 = 'You win!';
+        message2 = 'Your score is ' + this.score;
+      } else {
+        message1 = 'You lose!';
         message2 = 'Your score is ' + this.score;
       }
       context.font = '100px sans-serif';
@@ -363,8 +374,12 @@ class Game {
   }
   createEnemyPool() {
     for (let i = 0; i < this.numberOfEnemies; i++) {
-      this.enemyPool.push(new Asteroid(this));
-      this.enemyPool.push(new LobsterMorph(this));
+      let randomNumber = Math.random();
+      if (randomNumber > 0.25) {
+        this.enemyPool.push(new Asteroid(this));
+      } else {
+        this.enemyPool.push(new LobsterMorph(this));
+      }
     }
   }
   getEnemy() {
