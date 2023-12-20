@@ -118,10 +118,12 @@ class Enemy {
     this.height = this.radius * 2;
     this.speedX = 0;
     this.speedY = 0;
+    this.collided = false;
     this.free = true;
   }
   start() {
     this.free = false;
+    this.collided = false;
     this.frameX = 0;
     this.lives = this.maxLives;
     this.frameY = Math.floor(Math.random() * 4);
@@ -178,11 +180,13 @@ class Enemy {
         this.lives = 0;
         this.speedX = 0;
         this.speedY = 0;
+        this.collided = true;
         // this.reset();
       }
       // check collision enemy / player
       if (this.game.checkCollision(this, this.game.player)) {
         this.lives = 0;
+        this.collided = true;
         // this.reset();
       }
       // check collision enemy / projectile
@@ -198,7 +202,12 @@ class Enemy {
       });
       // sprite animation
       if (this.lives < 1 && this.game.spriteUpdate) this.frameX++;
-      if (this.frameX > this.maxFrame) this.reset();
+      if (this.frameX > this.maxFrame) {
+        this.reset();
+        if (!this.collided) {
+          this.game.score += this.maxLives;
+        }
+      }
     }
   }
 }
@@ -252,6 +261,9 @@ class Game {
     this.spriteTimer = 0;
     this.spriteInterval = 150;
 
+    this.score = 0;
+    this.winningScore = 50;
+
     this.mouse = {
       x: 0,
       y: 0,
@@ -273,6 +285,7 @@ class Game {
   }
   render(context, deltaTime) {
     this.planet.draw(context);
+    this.drawStatusText(context);
     this.player.draw(context);
     this.player.update();
     this.projectilePool.forEach(projectile => {
@@ -284,12 +297,14 @@ class Game {
       enemy.update();
     });
     //periodically activate an enemy
-    if (this.enemyTimer < this.enemyInterval) {
-      this.enemyTimer += deltaTime;
-    } else {
-      this.enemyTimer = 0;
-      const enemy = this.getEnemy();
-      if (enemy) enemy.start();
+    if (!this.gameOver) {
+      if (this.enemyTimer < this.enemyInterval) {
+        this.enemyTimer += deltaTime;
+      } else {
+        this.enemyTimer = 0;
+        const enemy = this.getEnemy();
+        if (enemy) enemy.start();
+      }
     }
     // periodically update sprites
     if (this.spriteTimer < this.spriteInterval) {
@@ -298,6 +313,27 @@ class Game {
     } else {
       this.spriteTimer = 0;
       this.spriteUpdate = true;
+    }
+    // win / lose condition
+    if (this.score >= this.winningScore) {
+      this.gameOver = true;
+    }
+  }
+  drawStatusText(context) {
+    context.font = '30px sans-serif';
+    context.fillStyle = 'white';
+    context.fillText('Score ' + this.score, 200, 200);
+    if (this.gameOver) {
+      context.textAlign = 'center';
+      let message1;
+      let message2;
+      if (this.score >= this.winningScore) {
+        message1 = 'You win!';
+        message2 = 'Your score is ' + this.score;
+      }
+      context.font = '100px sans-serif';
+      context.fillText(message1, this.width * 0.5, 300);
+      context.fillText(message2, this.width * 0.5, 400);
     }
   }
   calcAim(a, b) {
